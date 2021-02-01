@@ -808,6 +808,170 @@ describe('Red Perfume', () => {
               .not.toHaveBeenCalled();
           });
         });
+
+        describe('Nested selector', () => {
+          const nestedCSS = `
+            .after {
+                display: block;
+                padding: 10px;
+            }
+            .after .nested {
+                margin: 4px;
+            }
+          `;
+
+          test('Normal', () => {
+            options = {
+              verbose: true,
+              customLogger: jest.fn(),
+              tasks: [
+                {
+                  uglify: false,
+                  styles: {
+                    data: nestedCSS,
+                    result: function (result, err) {
+                      const expectation = testHelpers.trimIndentation(`
+                        .rp__display__--COLONblock {
+                          display: block;
+                        }
+                        .rp__padding__--COLON10px {
+                          padding: 10px;
+                        }
+                        .rp__margin__--COLON4px_---PARENT1 .rp__margin__--COLON4px_---CHILD {
+                          margin: 4px;
+                        }
+                      `, 24);
+
+                      expect(result)
+                        .toEqual(expectation, undefined);
+
+                      expect(err)
+                        .toEqual(undefined);
+                    }
+                  },
+                  markup: [
+                    {
+                      data: inputMarkup,
+                      result: function (result, err) {
+                        expect(testHelpers.trimIndentation(result))
+                          .toEqual(testHelpers.trimIndentation(`
+                            <!DOCTYPE html><html><head></head><body>
+                              <div class="simple pseudo"></div>
+                              <div class="rp__display__--COLONblock rp__padding__--COLON10px rp__margin__--COLON4px_---PARENT1">
+                                <div class="rp__margin__--COLON4px_---CHILD"></div>
+                              </div>
+                            </body></html>
+                          `, 28));
+
+                        expect(err)
+                          .toEqual(undefined);
+                      }
+                    }
+                  ],
+                  scripts: {
+                    result: function (result, err) {
+                      expect(result)
+                        .toEqual({
+                          '.after': [
+                            '.rp__display__--COLONblock',
+                            '.rp__padding__--COLON10px',
+                            '.rp__margin__--COLON4px_---PARENT1'
+                          ],
+                          '.nested': [
+                            '.rp__margin__--COLON4px_---CHILD'
+                          ]
+                        });
+
+                      expect(err)
+                        .toEqual(undefined);
+                    }
+                  }
+                }
+              ]
+            };
+
+            redPerfume.atomize(options);
+
+            expect(options.customLogger)
+              .not.toHaveBeenCalled();
+          });
+
+          test('Uglify', () => {
+            options = {
+              verbose: true,
+              customLogger: jest.fn(),
+              tasks: [
+                {
+                  uglify: true,
+                  styles: {
+                    data: nestedCSS,
+                    result: function (result, err) {
+                      const expectation = testHelpers.trimIndentation(`
+                        .rp__0 {
+                          display: block;
+                        }
+                        .rp__1 {
+                          padding: 10px;
+                        }
+                        .rp__2 .rp__3 {
+                          margin: 4px;
+                        }
+                      `, 24);
+
+                      expect(result)
+                        .toEqual(expectation, undefined);
+
+                      expect(err)
+                        .toEqual(undefined);
+                    }
+                  },
+                  markup: [
+                    {
+                      data: inputMarkup,
+                      result: function (result, err) {
+                        expect(testHelpers.trimIndentation(result))
+                          .toEqual(testHelpers.trimIndentation(`
+                            <!DOCTYPE html><html><head></head><body>
+                              <div class="simple pseudo"></div>
+                              <div class="rp__0 rp__1 rp__2">
+                                <div class="rp__3"></div>
+                              </div>
+                            </body></html>
+                          `, 28));
+
+                        expect(err)
+                          .toEqual(undefined);
+                      }
+                    }
+                  ],
+                  scripts: {
+                    result: function (result, err) {
+                      expect(result)
+                        .toEqual({
+                          '.after': [
+                            '.rp__0',
+                            '.rp__1',
+                            '.rp__2'
+                          ],
+                          '.nested': [
+                            '.rp__3'
+                          ]
+                        });
+
+                      expect(err)
+                        .toEqual(undefined);
+                    }
+                  }
+                }
+              ]
+            };
+
+            redPerfume.atomize(options);
+
+            expect(options.customLogger)
+              .not.toHaveBeenCalled();
+          });
+        });
       });
     });
   });
