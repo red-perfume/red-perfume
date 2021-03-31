@@ -1,3 +1,5 @@
+/* eslint-disable max-lines-per-function */
+
 const mockfs = require('mock-fs');
 const validator = require('@/validator.js');
 

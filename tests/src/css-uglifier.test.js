@@ -1,3 +1,5 @@
+/* eslint-disable max-lines-per-function */
+
 const cssUglifier = require('@/css-uglifier.js');
 
 describe('Class encoding', () => {

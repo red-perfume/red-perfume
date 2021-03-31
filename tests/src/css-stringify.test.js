@@ -1,3 +1,5 @@
+/* eslint-disable max-lines-per-function */
+
 const cssStringify = require('@/css-stringify.js');
 
 const testHelpers = require('@@/testHelpers.js');

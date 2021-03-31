@@ -1,3 +1,5 @@
+/* eslint-disable max-lines-per-function */
+
 const html = require('@/html.js');
 
 describe('HTML', () => {

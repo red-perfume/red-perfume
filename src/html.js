@@ -50,7 +50,7 @@ const html = function (options, input, classMap) {
   classMap = classMap || {};
 
   // String => Object
-  const document = parse5.parse(input);
+  const document = cleanDocument(parse5.parse(input));
 
   /**
    * Finds and removes every instance of a value from an array
@@ -75,19 +75,26 @@ const html = function (options, input, classMap) {
    * Replaces all instances of a class name in class attributes in the DOM
    * with its atomized representation of class names.
    *
-   * @param  {object}    node            An HTML AST node
-   * @param  {string}    classToReplace  A string to find and replace
-   * @param  {Array}     newClasses      Array of strings that will replace the given class
+   * @param {object}     node            An HTML AST node
+   * @param {string}     classToReplace  A string to find and replace
+   * @param {Array}      newClasses      Array of strings that will replace the given class
+   * @param {string}     tag             HTML tag name ('h1', 'section', 'footer', etc)
    * @return {undefined}                 Just mutates the AST. Nothing returned
    */
-  function replaceSemanticClassWithAtomizedClasses (node, classToReplace, newClasses) {
+  function replaceSemanticClassWithAtomizedClasses (node, classToReplace, newClasses, tag) {
     if (node.attrs) {
+      // console.log(node);
+      // classToReplace
+      // node.tagName
       node.attrs.forEach(function (attribute) {
         if (attribute.name === 'class') {
           let classes = attribute.value.split(' ');
+
           if (classes.includes(classToReplace)) {
-            classes = removeEveryInstance(classes, classToReplace);
-            classes.push(...newClasses);
+            if (!tag || node.tagName === tag) {
+              classes = removeEveryInstance(classes, classToReplace);
+              classes.push(...newClasses);
+            }
           }
           attribute.value = classes.join(' ');
         }
@@ -95,7 +102,7 @@ const html = function (options, input, classMap) {
     }
     if (node.childNodes) {
       node.childNodes.forEach(function (child) {
-        replaceSemanticClassWithAtomizedClasses(child, classToReplace, newClasses);
+        replaceSemanticClassWithAtomizedClasses(child, classToReplace, newClasses, tag);
       });
     }
   }
@@ -105,10 +112,16 @@ const html = function (options, input, classMap) {
     atomizedClasses = atomizedClasses.map(function (atomic) {
       return atomic.replace('.', '');
     });
+
+    let tag = '';
     if (semanticClass.startsWith('.')) {
       semanticClass = semanticClass.replace('.', '');
+    } else {
+      const classAndTag = semanticClass.split('.');
+      tag = classAndTag[0];
+      semanticClass = classAndTag[1];
     }
-    replaceSemanticClassWithAtomizedClasses(document, semanticClass, atomizedClasses);
+    replaceSemanticClassWithAtomizedClasses(document, semanticClass, atomizedClasses, tag);
   });
 
   // Object => string

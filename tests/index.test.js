@@ -1,3 +1,5 @@
+/* eslint-disable max-lines-per-function */
+
 const mockfs = require('mock-fs');
 const fs = require('fs');
 const redPerfume = require('../index.js');
@@ -487,6 +489,7 @@ describe('Red Perfume', () => {
           <!DOCTYPE html>
           <html>
             <body>
+              <h1 class="qualifying"></h1>
               <div class="simple pseudo"></div>
               <div class="after">
                 <div class="nested"></div>
@@ -536,6 +539,7 @@ describe('Red Perfume', () => {
                         expect(testHelpers.trimIndentation(result))
                           .toEqual(testHelpers.trimIndentation(`
                             <!DOCTYPE html><html><head></head><body>
+                              <h1 class="qualifying"></h1>
                               <div class="pseudo rp__padding__--COLON10px rp__margin__--COLON10px"></div>
                               <div class="after">
                                 <div class="nested"></div>
@@ -605,6 +609,7 @@ describe('Red Perfume', () => {
                         expect(testHelpers.trimIndentation(result))
                           .toEqual(testHelpers.trimIndentation(`
                             <!DOCTYPE html><html><head></head><body>
+                              <h1 class="qualifying"></h1>
                               <div class="pseudo rp__0 rp__1"></div>
                               <div class="after">
                                 <div class="nested"></div>
@@ -693,6 +698,7 @@ describe('Red Perfume', () => {
                         expect(testHelpers.trimIndentation(result))
                           .toEqual(testHelpers.trimIndentation(`
                             <!DOCTYPE html><html><head></head><body>
+                              <h1 class="qualifying"></h1>
                               <div class="simple rp__color__--COLON__--OCTOTHORPF00 rp__text-decoration__--COLONnone rp__color__--COLON__--OCTOTHORPA00___-HOVER rp__text-decoration__--COLONunderline___-HOVER"></div>
                               <div class="after">
                                 <div class="nested"></div>
@@ -770,6 +776,7 @@ describe('Red Perfume', () => {
                         expect(testHelpers.trimIndentation(result))
                           .toEqual(testHelpers.trimIndentation(`
                             <!DOCTYPE html><html><head></head><body>
+                              <h1 class="qualifying"></h1>
                               <div class="simple rp__0 rp__1 rp__2 rp__3"></div>
                               <div class="after">
                                 <div class="nested"></div>
@@ -807,6 +814,164 @@ describe('Red Perfume', () => {
             expect(options.customLogger)
               .not.toHaveBeenCalled();
           });
+        });
+
+        describe('Qualifying', () => {
+          const qualifyingCSS = `
+            h1.qualifying {
+              border: 1px solid #000;
+              padding: 10px;
+              line-height: 1.4;
+            }
+          `;
+
+          test('Normal', () => {
+            options = {
+              verbose: true,
+              customLogger: jest.fn(),
+              tasks: [
+                {
+                  uglify: false,
+                  styles: {
+                    data: qualifyingCSS,
+                    result: function (result, err) {
+                      const expectation = testHelpers.trimIndentation(`
+                        h1.rp__border__--COLON1px_____-solid_____-__--OCTOTHORP000 {
+                          border: 1px solid #000;
+                        }
+                        h1.rp__padding__--COLON10px {
+                          padding: 10px;
+                        }
+                        h1.rp__line-height__--COLON1__--DOT4 {
+                          line-height: 1.4;
+                        }
+                      `, 24);
+
+                      expect(result)
+                        .toEqual(expectation, undefined);
+
+                      expect(err)
+                        .toEqual(undefined);
+                    }
+                  },
+                  markup: [
+                    {
+                      data: inputMarkup,
+                      result: function (result, err) {
+                        expect(testHelpers.trimIndentation(result))
+                          .toEqual(testHelpers.trimIndentation(`
+                            <!DOCTYPE html><html><head></head><body>
+                              <h1 class="rp__border__--COLON1px_____-solid_____-__--OCTOTHORP000 rp__padding__--COLON10px rp__line-height__--COLON1__--DOT4"></h1>
+                              <div class="simple pseudo"></div>
+                              <div class="after">
+                                <div class="nested"></div>
+                              </div>
+                            </body></html>
+                          `, 28));
+
+                        expect(err)
+                          .toEqual(undefined);
+                      }
+                    }
+                  ],
+                  scripts: {
+                    result: function (result, err) {
+                      expect(result)
+                        .toEqual({
+                          'h1.qualifying': [
+                            '.rp__border__--COLON1px_____-solid_____-__--OCTOTHORP000',
+                            '.rp__padding__--COLON10px',
+                            '.rp__line-height__--COLON1__--DOT4'
+                          ]
+                        });
+
+                      expect(err)
+                        .toEqual(undefined);
+                    }
+                  }
+                }
+              ]
+            };
+
+            redPerfume.atomize(options);
+
+            expect(options.customLogger)
+              .not.toHaveBeenCalled();
+          });
+
+          // test('Uglify', () => {
+          //   options = {
+          //     verbose: true,
+          //     customLogger: jest.fn(),
+          //     tasks: [
+          //       {
+          //         uglify: true,
+          //         styles: {
+          //           data: qualifyingCSS,
+          //           result: function (result, err) {
+          //             const expectation = testHelpers.trimIndentation(`
+          //               h1.rp__0 {
+          //                 border: 1px solid #000;
+          //               }
+          //               h1.rp__1 {
+          //                 padding: 10px;
+          //               }
+          //               h1.rp__2 {
+          //                 line-height: 1.4;
+          //               }
+          //             `, 24);
+
+          //             expect(result)
+          //               .toEqual(expectation, undefined);
+
+          //             expect(err)
+          //               .toEqual(undefined);
+          //           }
+          //         },
+          //         markup: [
+          //           {
+          //             data: inputMarkup,
+          //             result: function (result, err) {
+          //               expect(testHelpers.trimIndentation(result))
+          //                 .toEqual(testHelpers.trimIndentation(`
+          //                   <!DOCTYPE html><html><head></head><body>
+          //                     <h1 class="rp__0 rp__1 rp__2"></h1>
+          //                     <div class="simple pseudo"></div>
+          //                     <div class="after">
+          //                       <div class="nested"></div>
+          //                     </div>
+          //                   </body></html>
+          //                 `, 28));
+
+          //               expect(err)
+          //                 .toEqual(undefined);
+          //             }
+          //           }
+          //         ],
+          //         scripts: {
+          //           result: function (result, err) {
+          //             expect(result)
+          //               .toEqual({
+          //                 '.qualifying': [
+          //                   '.rp__0',
+          //                   '.rp__1',
+          //                   '.rp__2'
+          //                 ]
+          //               });
+
+          //             expect(err)
+          //               .toEqual(undefined);
+          //           }
+          //         }
+          //       }
+          //     ]
+          //   };
+
+          //   redPerfume.atomize(options);
+
+          //   expect(options.customLogger)
+          //     .not.toHaveBeenCalled();
+          // });
         });
       });
     });

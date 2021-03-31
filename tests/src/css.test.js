@@ -1,3 +1,5 @@
+/* eslint-disable max-lines-per-function */
+
 const css = require('@/css.js');
 
 const testHelpers = require('@@/testHelpers.js');
@@ -292,6 +294,35 @@ describe('CSS', () => {
           }
           .rp__8:hover {
             background: #0F0;
+          }
+        `, 10));
+    });
+
+    test('Handle qualifying elements', () => {
+      let input = `
+        h1.example {
+          display: block;
+          text-align: center;
+        }
+      `;
+
+      expect(css(options, input, false).output)
+        .toEqual(testHelpers.trimIndentation(`
+          h1.rp__display__--COLONblock {
+            display: block;
+          }
+          h1.rp__text-align__--COLONcenter {
+            text-align: center;
+          }
+        `, 10));
+
+      expect(css(options, input, true).output)
+        .toEqual(testHelpers.trimIndentation(`
+          h1.rp__0 {
+            display: block;
+          }
+          h1.rp__1 {
+            text-align: center;
           }
         `, 10));
     });

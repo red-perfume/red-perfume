@@ -5,29 +5,6 @@ const encodeClassName = require('./css-class-encoding.js');
 const helpers = require('./helpers.js');
 
 /**
- * Rrecursively remove position. Parsed CSS contains position
- * data that is not of use for us and just clouds up the console
- * logs during development.
- *
- * @param  {any} item  Parsed CSS or a portion of it
- */
-function recursivelyRemovePosition (item) {
-  if (Array.isArray(item)) {
-    item.forEach(function (subItem) {
-      recursivelyRemovePosition(subItem);
-    });
-  }
-  if (item && typeof(item) === 'object' && !Array.isArray(item)) {
-    if (item.hasOwnProperty('position')) {
-      delete item.position;
-    }
-    Object.keys(item).forEach(function (key) {
-      recursivelyRemovePosition(item[key]);
-    });
-  }
-}
-
-/**
  * Remove duplicate property/value pairs that are duplicates.
  * `display: none; display: none;` becomes `display:none;`
  * `display: block; display: none;` is unchanged because they
@@ -79,15 +56,16 @@ function updateClassMap (classMap, selectors, encodedClassName) {
  * but still included in the output.
  *
  * @param  {object} rule     Parsed CSS Rule
- * @param  {object} newRules Object containing all unique rules
+ * @return {object} newRule  A CSS AST rule
  */
-function handleNonClasses (rule, newRules) {
+function handleNonClasses (rule) {
   let originalSelectorName = rule.selectors[0][0].original;
-  newRules[originalSelectorName] = {
+  const newRule = {
     type: 'rule',
-    selectors: [[originalSelectorName]],
+    selectors: [[{ original: originalSelectorName }]],
     declarations: rule.declarations
   };
+  return newRule;
 }
 
 const css = function (options, input, uglify) {
@@ -179,52 +157,85 @@ const css = function (options, input, uglify) {
        }
      }
   */
+  // console.log(JSON.stringify(parsed.stylesheet.rules[0].declarations, null, '\t'));
+
+  // parsed.stylesheet.rules[0].selectors:
+  // [
+  //   [
+  //     {
+  //       type: 'tag',
+  //       name: 'h1',
+  //       namespace: null,
+  //       original: 'h1.qualifying'
+  //     },
+  //     {
+  //       type: 'attribute',
+  //       name: 'class',
+  //       action: 'element',
+  //       value: 'qualifying',
+  //       ignoreCase: false,
+  //       namespace: null
+  //     }
+  //   ]
+  // ]
+
   parsed.stylesheet.rules.forEach(function (rule) {
-    recursivelyRemovePosition(rule);
     // console.log(JSON.stringify(rule, null, 2));
 
     let type = rule.selectors[0][0].type;
     let name = rule.selectors[0][0].name;
     if (type === 'tag' || (type === 'attribute' && name !== 'class')) {
-      handleNonClasses(rule, newRules);
-    } else {
-      /* A declaration looks like:
-        {
-          type: 'declaration',
-          property: 'padding',
-          value: '10px',
-          position: Position {
-            start: { line: 1, column: 48 },
-            end: { line: 1, column: 61 },
-            source: undefined
-          }
-        }
-      */
-      rule.declarations.forEach(function (declaration) {
-        /* An encoded class name look like:
-          .rp__padding__--COLON10px
-        */
-        let encodedClassName = encodeClassName(options, declaration);
-
-        if (rule.selectors[0][1] && rule.selectors[0][1].type && rule.selectors[0][1].type === 'pseudo') {
-          let pseudoName = rule.selectors[0][1].name;
-          // .rp__display__--COLONblock___-HOVER:hover
-          let pseudoClassName = encodedClassName + '___-' + pseudoName.toUpperCase() + ':' + pseudoName;
-          encodedClassName = pseudoClassName;
-        }
-
-        classMap = updateClassMap(classMap, rule.selectors, encodedClassName);
-
-        newRules[encodedClassName] = {
-          type: 'rule',
-          selectors: [[encodedClassName]],
-          declarations: [declaration]
-        };
-      });
+      // handleNonClasses(rule, newRules);
+      rule = handleNonClasses(rule);
     }
+    // console.log(JSON.stringify(rule, null, '\t'));
+    /* A declaration looks like:
+      {
+        type: 'declaration',
+        property: 'padding',
+        value: '10px',
+        position: Position {
+          start: { line: 1, column: 48 },
+          end: { line: 1, column: 61 },
+          source: undefined
+        }
+      }
+    */
+    rule.declarations.forEach(function (declaration) {
+      /* An encoded class name look like:
+        .rp__padding__--COLON10px
+      */
+      const isClass = rule.selectors[0].find((selector) => {
+        return selector.name === 'class';
+      });
+      let encodedClassName = '';
+      let encodedName = '';
+      if (!isClass) {
+        encodedName = rule.selectors[0][0].original;
+      } else {
+        encodedClassName = encodeClassName(options, declaration);
+        if (type === 'tag') {
+          encodedName = name + encodedClassName;
+        }
+      }
+
+      if (rule.selectors[0][1] && rule.selectors[0][1].type && rule.selectors[0][1].type === 'pseudo') {
+        let pseudoName = rule.selectors[0][1].name;
+        // .rp__display__--COLONblock___-HOVER:hover
+        let pseudoClassName = encodedClassName + '___-' + pseudoName.toUpperCase() + ':' + pseudoName;
+        encodedClassName = pseudoClassName;
+      }
+
+      classMap = updateClassMap(classMap, rule.selectors, encodedClassName);
+
+      newRules[encodedClassName] = {
+        type: 'rule',
+        selectors: [[encodedName || encodedClassName]],
+        declarations: [declaration]
+      };
+    });
   });
 
-  recursivelyRemovePosition(newRules);
   // console.log(JSON.stringify(newRules, null, 2));
   classMap = removeIdenticalProperties(classMap);
 

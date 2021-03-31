@@ -1,3 +1,5 @@
+/* eslint-disable max-lines-per-function */
+
 const cssParser = require('@/css-parser.js');
 
 describe('CSS parser', () => {
@@ -60,33 +62,11 @@ describe('CSS parser', () => {
                 ],
                 declarations: [
                   {
-                    position: {
-                      end: {
-                        column: 21,
-                        line: 1
-                      },
-                      source: undefined,
-                      start: {
-                        column: 9,
-                        line: 1
-                      }
-                    },
                     property: 'color',
                     type: 'declaration',
                     value: '#F00'
                   }
-                ],
-                position: {
-                  end: {
-                    column: 22,
-                    line: 1
-                  },
-                  source: undefined,
-                  start: {
-                    column: 1,
-                    line: 1
-                  }
-                }
+                ]
               }
             ],
             source: undefined,
